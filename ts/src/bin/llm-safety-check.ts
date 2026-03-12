@@ -1,12 +1,16 @@
-#!/usr/bin/env node
+#!/usr/bin/env tsx
 // ---------------------------------------------------------------------------
 // CLI entry point for the LLM safety check hook
 //
-// Usage in ~/.claude/settings.json:
+// Requires: npm install -g tsx
+//
+// Usage: symlink this file and configure in ~/.claude/settings.json:
+//   ln -s /path/to/claude-tools/ts/src/bin/llm-safety-check.ts ~/.claude/hooks/llm-safety-check.ts
+//
 //   "hooks": {
 //     "PreToolUse": [{
 //       "matcher": "Bash",
-//       "hooks": ["node /path/to/claude-tools/ts/dist/bin/llm-safety-check.js"]
+//       "hooks": [{ "type": "command", "command": "tsx ~/.claude/hooks/llm-safety-check.ts", "timeout": 35 }]
 //     }]
 //   }
 // ---------------------------------------------------------------------------

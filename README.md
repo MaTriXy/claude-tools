@@ -22,15 +22,40 @@ This installs the following commands:
 - `claude-set-key` - Manage per-directory API keys in macOS Keychain
 - `claude-title-sessions` - Generate AI titles for untitled sessions
 
-### Hook
+### Hook (LLM Safety Check)
 
-The safety hook is standalone and doesn't require installing the package:
+The safety hook requires `tsx` installed globally:
 
 ```bash
-ln -sf "$(pwd)/hooks/llm_safety_check.py" ~/.claude/hooks/llm_safety_check.py
+npm install -g tsx
 ```
 
-Then configure it as a `PreToolUse` hook matching `Bash` in Claude Code settings.
+Then symlink and configure:
+
+```bash
+ln -sf "$(pwd)/ts/src/bin/llm-safety-check.ts" ~/.claude/hooks/llm-safety-check.ts
+```
+
+Add to `~/.claude/settings.json`:
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "tsx ~/.claude/hooks/llm-safety-check.ts",
+            "timeout": 35
+          }
+        ]
+      }
+    ]
+  }
+}
+```
 
 ## Tools
 
@@ -102,9 +127,9 @@ claude-set-history /old/path /new/path
 
 ## Hooks
 
-### llm_safety_check.py
+### llm-safety-check.ts
 
-A `PreToolUse` hook for Claude Code that sends Bash commands to Claude for safety evaluation before execution. Returns one of:
+A `PreToolUse` hook for Claude Code that sends Bash commands to Claude (with extended thinking) for safety evaluation before execution. Returns one of:
 
 - **approve** - auto-allows the command (skips permission prompt)
 - **deny** - blocks the command
@@ -114,7 +139,9 @@ Requires `ANTHROPIC_API_KEY` env var or a key stored in macOS Keychain under "Cl
 
 ## Requirements
 
-- Python 3.10+
+- Node.js >= 20
+- `tsx` installed globally (`npm install -g tsx`) - required for the safety hook
+- Python 3.10+ (for the Python CLI tools)
 - macOS (for Keychain-based features in `claude-set-key` and the safety hook)
 - An Anthropic API key (for LLM features)
 
