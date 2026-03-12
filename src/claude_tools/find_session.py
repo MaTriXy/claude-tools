@@ -13,20 +13,19 @@ import os
 import re
 import sys
 
-from claude_tools.utils import (
-    DEFAULT_MODEL,
-    PROJECTS_DIR,
-    call_claude,
-    dirname_to_path,
-    extract_strings,
-    list_project_dirs,
-    list_sessions,
-    parse_session,
-    path_to_dirname,
-    require_api_key,
-    require_projects_dir,
-    session_description,
-)
+try:
+    from claude_tools.utils import (
+        DEFAULT_MODEL, PROJECTS_DIR, call_claude, dirname_to_path,
+        extract_strings, list_project_dirs, list_sessions, parse_session,
+        path_to_dirname, require_api_key, require_projects_dir, session_description,
+    )
+except ImportError:
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from utils import (  # type: ignore[no-redef]
+        DEFAULT_MODEL, PROJECTS_DIR, call_claude, dirname_to_path,
+        extract_strings, list_project_dirs, list_sessions, parse_session,
+        path_to_dirname, require_api_key, require_projects_dir, session_description,
+    )
 
 
 

@@ -13,17 +13,19 @@ import os
 import shutil
 import sys
 
-from claude_tools.utils import (
-    PROJECTS_DIR,
-    HISTORY_FILE,
-    path_to_dirname,
-    dirname_to_path,
-    preserve_mtime,
-    require_projects_dir,
-    print_sessions,
-    prompt_choice,
-    list_project_dirs,
-)
+try:
+    from claude_tools.utils import (
+        PROJECTS_DIR, HISTORY_FILE, path_to_dirname, dirname_to_path,
+        preserve_mtime, require_projects_dir, print_sessions, prompt_choice,
+        list_project_dirs,
+    )
+except ImportError:
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from utils import (  # type: ignore[no-redef]
+        PROJECTS_DIR, HISTORY_FILE, path_to_dirname, dirname_to_path,
+        preserve_mtime, require_projects_dir, print_sessions, prompt_choice,
+        list_project_dirs,
+    )
 
 
 def resolve_path_arg(path):

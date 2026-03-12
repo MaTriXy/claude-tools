@@ -16,20 +16,19 @@ import json
 import os
 import sys
 
-from claude_tools.utils import (
-    DEFAULT_MODEL,
-    PROJECTS_DIR,
-    call_claude,
-    dirname_to_path,
-    list_project_dirs,
-    list_sessions,
-    path_to_dirname,
-    preserve_mtime,
-    require_api_key,
-    require_projects_dir,
-    resolve_path,
-    session_description,
-)
+try:
+    from claude_tools.utils import (
+        DEFAULT_MODEL, PROJECTS_DIR, call_claude, dirname_to_path,
+        list_project_dirs, list_sessions, path_to_dirname, preserve_mtime,
+        require_api_key, require_projects_dir, resolve_path, session_description,
+    )
+except ImportError:
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from utils import (  # type: ignore[no-redef]
+        DEFAULT_MODEL, PROJECTS_DIR, call_claude, dirname_to_path,
+        list_project_dirs, list_sessions, path_to_dirname, preserve_mtime,
+        require_api_key, require_projects_dir, resolve_path, session_description,
+    )
 
 TITLE_PROMPT = """\
 Generate a succinct title for a coding session based on the provided description.

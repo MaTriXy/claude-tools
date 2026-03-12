@@ -16,17 +16,19 @@ import tempfile
 import time
 from datetime import datetime
 
-from claude_tools.utils import (
-    PROJECTS_DIR,
-    dirname_to_path,
-    extract_strings,
-    list_project_dirs,
-    path_to_dirname,
-    preserve_mtime,
-    print_sessions,
-    require_projects_dir,
-    resolve_path,
-)
+try:
+    from claude_tools.utils import (
+        PROJECTS_DIR, dirname_to_path, extract_strings, list_project_dirs,
+        path_to_dirname, preserve_mtime, print_sessions, require_projects_dir,
+        resolve_path,
+    )
+except ImportError:
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from utils import (  # type: ignore[no-redef]
+        PROJECTS_DIR, dirname_to_path, extract_strings, list_project_dirs,
+        path_to_dirname, preserve_mtime, print_sessions, require_projects_dir,
+        resolve_path,
+    )
 
 # ---------------------------------------------------------------------------
 # detect-secrets imports (must be available)
