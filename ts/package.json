@@ -11,6 +11,9 @@
             "types": "./dist/index.d.ts"
         }
     },
+    "bin": {
+        "llm-safety-check": "dist/bin/llm-safety-check.js"
+    },
     "scripts": {
         "prepare": "tsc",
         "build": "tsc",

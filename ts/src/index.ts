@@ -20,6 +20,7 @@ export {
     ensureEnvrc,
     removeEnvrcSnippet,
 } from "./set-key.js";
+export { checkCommandSafety, processHookInput } from "./llm-safety-check.js";
 export {
     pathToDirname,
     dirnameToPath,

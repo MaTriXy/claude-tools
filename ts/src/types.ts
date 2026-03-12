@@ -110,3 +110,21 @@ export interface KeychainListResult {
     /** Whether a default "Claude Code" key exists */
     hasDefaultKey: boolean;
 }
+
+/** LLM safety check decision */
+export interface SafetyCheckResult {
+    decision: "approve" | "deny" | "prompt";
+    reason: string;
+}
+
+/** Input from the Claude Code hook system (PreToolUse) */
+export interface HookInput {
+    tool_name: string;
+    tool_input: { command?: string; description?: string };
+}
+
+/** Output to return to the Claude Code hook system */
+export interface HookOutput {
+    decision: "allow" | "deny";
+    reason: string;
+}
