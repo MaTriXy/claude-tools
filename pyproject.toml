@@ -1,0 +1,24 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "claude-tools"
+version = "0.1.0"
+description = "CLI tools and hooks for Claude Code"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+dependencies = [
+    "detect-secrets",
+]
+
+[project.scripts]
+claude-find-session = "claude_tools.find_session:main"
+claude-redact-secrets = "claude_tools.redact_secrets:main"
+claude-set-history = "claude_tools.set_history:main"
+claude-set-key = "claude_tools.set_key:main"
+claude-title-sessions = "claude_tools.title_sessions:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/claude_tools"]
