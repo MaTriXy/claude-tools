@@ -1,0 +1,272 @@
+// ---------------------------------------------------------------------------
+// Shared utilities for Claude Code session history
+// ---------------------------------------------------------------------------
+
+import * as fs from "node:fs";
+import * as path from "node:path";
+import * as os from "node:os";
+import { execFileSync } from "node:child_process";
+import type { Session, ProjectDir } from "./types.js";
+
+export const CLAUDE_DIR = path.join(os.homedir(), ".claude");
+export const PROJECTS_DIR = path.join(CLAUDE_DIR, "projects");
+export const HISTORY_FILE = path.join(CLAUDE_DIR, "history.jsonl");
+export const DEFAULT_MODEL = "claude-haiku-4-5-20251001";
+
+// ---------------------------------------------------------------------------
+// Path encoding/decoding
+// ---------------------------------------------------------------------------
+
+/** Convert an absolute path to a Claude project directory name. */
+export function pathToDirname(p: string): string {
+    return p.replace(/\//g, "-").replace(/\./g, "-");
+}
+
+/** Convert a Claude project directory name back to an absolute path.
+ *
+ * Since pathToDirname replaces both / and . with -, the reverse is ambiguous
+ * when path components contain dashes (e.g. 'claude-relay'). We resolve this
+ * by listing actual directory contents at each level.
+ */
+export function dirnameToPath(dirname: string): string {
+    if (!dirname.startsWith("-")) {
+        return dirname.replace(/-/g, "/");
+    }
+
+    const raw = dirname.slice(1).split("-");
+    if (raw.length === 0) return "/";
+
+    // Handle -- sequences: Claude Code replaces both / and . with -,
+    // so -- typically means a dot-prefixed component (e.g. .claude -> --claude).
+    const parts: string[] = [];
+    let i = 0;
+    while (i < raw.length) {
+        if (raw[i] === "" && i + 1 < raw.length) {
+            parts.push("." + raw[i + 1]);
+            i += 2;
+        } else {
+            parts.push(raw[i]);
+            i += 1;
+        }
+    }
+
+    function resolve(parts: string[], current: string): string {
+        if (parts.length === 0) return current;
+
+        if (fs.existsSync(current) && fs.statSync(current).isDirectory()) {
+            let entries: Set<string>;
+            try {
+                entries = new Set(fs.readdirSync(current));
+            } catch {
+                entries = new Set();
+            }
+            for (let j = 1; j <= parts.length; j++) {
+                const segment = parts.slice(0, j).join("-");
+                if (!entries.has(segment)) continue;
+                const candidate = current + "/" + segment;
+                const remaining = parts.slice(j);
+                if (remaining.length === 0) return candidate;
+                if (fs.statSync(candidate).isDirectory()) {
+                    const result = resolve(remaining, candidate);
+                    if (fs.existsSync(result)) return result;
+                }
+            }
+        }
+
+        return resolve(parts.slice(1), current + "/" + parts[0]);
+    }
+
+    return resolve(parts, "");
+}
+
+// ---------------------------------------------------------------------------
+// Validation
+// ---------------------------------------------------------------------------
+
+/** Throw if the Claude projects directory doesn't exist. */
+export function requireProjectsDir(): void {
+    if (!fs.existsSync(PROJECTS_DIR) || !fs.statSync(PROJECTS_DIR).isDirectory()) {
+        throw new Error(`No Claude projects directory found at ${PROJECTS_DIR}`);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// API key resolution
+// ---------------------------------------------------------------------------
+
+/** Get Anthropic API key from macOS Keychain, falling back to env var. */
+export function getApiKey(): string | null {
+    if (process.platform === "darwin") {
+        try {
+            const result = execFileSync("security", ["find-generic-password", "-s", "Claude Code", "-w"], {
+                encoding: "utf-8",
+                stdio: ["pipe", "pipe", "pipe"],
+            }).trim();
+            if (result) return result;
+        } catch {
+            // Keychain lookup failed, try env var
+        }
+    }
+    return process.env.ANTHROPIC_API_KEY || null;
+}
+
+/** Get API key or throw. */
+export function requireApiKey(): string {
+    const key = getApiKey();
+    if (!key) {
+        throw new Error("No API key found. Set ANTHROPIC_API_KEY or store a key via claude-set-key");
+    }
+    return key;
+}
+
+// ---------------------------------------------------------------------------
+// Claude API
+// ---------------------------------------------------------------------------
+
+/** Call the Claude API and return the text response. */
+export async function callClaude(apiKey: string, model: string, messages: Array<{ role: string; content: string }>, maxTokens = 1024): Promise<string> {
+    const body = JSON.stringify({ model, max_tokens: maxTokens, messages });
+
+    const resp = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+            "x-api-key": apiKey,
+            "anthropic-version": "2023-06-01",
+            "content-type": "application/json",
+        },
+        body,
+    });
+
+    if (!resp.ok) {
+        const errorBody = await resp.text();
+        throw new Error(`Claude API error ${resp.status}: ${errorBody.slice(0, 200)}`);
+    }
+
+    const data = (await resp.json()) as { content?: Array<{ type: string; text?: string }> };
+    for (const block of data.content ?? []) {
+        if (block.type === "text" && block.text) {
+            return block.text.trim();
+        }
+    }
+    throw new Error("No text content in Claude API response");
+}
+
+// ---------------------------------------------------------------------------
+// Session parsing
+// ---------------------------------------------------------------------------
+
+/** Recursively extract all string values from a JSON object. */
+export function extractStrings(obj: unknown, depth = 0): string[] {
+    if (depth > 10) return [];
+    if (typeof obj === "string") return [obj];
+    if (Array.isArray(obj)) {
+        return obj.flatMap((item) => extractStrings(item, depth + 1));
+    }
+    if (obj && typeof obj === "object") {
+        return Object.values(obj).flatMap((v) => extractStrings(v, depth + 1));
+    }
+    return [];
+}
+
+/** Parse a session .jsonl file and return its metadata. */
+export function parseSession(filepath: string): Session {
+    let msgCount = 0;
+    let firstPrompt = "";
+    let summary = "";
+    let customTitle = "";
+    let aiTitle = "";
+    let created = "";
+    let modified = "";
+
+    const content = fs.readFileSync(filepath, "utf-8");
+    for (const line of content.split("\n")) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+
+        let entry: Record<string, unknown>;
+        try {
+            entry = JSON.parse(trimmed);
+        } catch {
+            continue;
+        }
+
+        const t = entry.type as string | undefined;
+
+        if (t === "custom-title") {
+            customTitle = (entry.customTitle as string) || "";
+        } else if (t === "ai-title") {
+            aiTitle = (entry.aiTitle as string) || "";
+        } else if (t === "summary" && !summary) {
+            const s = (entry.summary as string) || "";
+            if (s && !s.startsWith("I don") && !s.startsWith("Unable to")) {
+                summary = s;
+            }
+        }
+
+        if (t === "user" || t === "assistant") {
+            msgCount++;
+            const ts = (entry.timestamp as string) || "";
+            if (ts) {
+                if (!created) created = ts;
+                modified = ts;
+            }
+            if (t === "user" && !firstPrompt) {
+                const msg = entry.message as { content?: unknown } | undefined;
+                const c = msg?.content;
+                if (typeof c === "string" && c !== "Warmup") {
+                    firstPrompt = c;
+                }
+            }
+        }
+    }
+
+    const sessionId = path.basename(filepath, ".jsonl");
+
+    return { sessionId, msgCount, customTitle, aiTitle, summary, firstPrompt, created, modified };
+}
+
+/** Return the best description for a session. */
+export function sessionDescription(s: Session): string {
+    return s.customTitle || s.aiTitle || s.summary || s.firstPrompt.slice(0, 60);
+}
+
+/** Parse all sessions in a project directory. */
+export function listSessions(projectDir: string): Session[] {
+    const sessions: Session[] = [];
+    for (const fname of fs.readdirSync(projectDir).sort()) {
+        if (!fname.endsWith(".jsonl")) continue;
+        const s = parseSession(path.join(projectDir, fname));
+        if (s.msgCount > 0) sessions.push(s);
+    }
+    return sessions;
+}
+
+/** List all project directories with their decoded paths. */
+export function listProjectDirs(): ProjectDir[] {
+    if (!fs.existsSync(PROJECTS_DIR)) return [];
+
+    const results: ProjectDir[] = [];
+    for (const entry of fs.readdirSync(PROJECTS_DIR).sort()) {
+        const fullPath = path.join(PROJECTS_DIR, entry);
+        if (!fs.statSync(fullPath).isDirectory()) continue;
+        results.push({
+            dirName: entry,
+            decodedPath: dirnameToPath(entry),
+            fullPath,
+        });
+    }
+    return results;
+}
+
+// ---------------------------------------------------------------------------
+// File modification time preservation
+// ---------------------------------------------------------------------------
+
+/** Execute a function while preserving a file's mtime. */
+export async function preserveMtime(filepath: string, fn: () => void | Promise<void>): Promise<void> {
+    const stat = fs.statSync(filepath);
+    const originalAtime = stat.atime;
+    const originalMtime = stat.mtime;
+    await fn();
+    fs.utimesSync(filepath, originalAtime, originalMtime);
+}
