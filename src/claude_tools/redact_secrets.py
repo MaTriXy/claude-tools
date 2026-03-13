@@ -18,15 +18,25 @@ from datetime import datetime
 
 try:
     from claude_tools.utils import (
-        PROJECTS_DIR, dirname_to_path, extract_strings, list_project_dirs,
-        path_to_dirname, preserve_mtime, print_sessions, require_projects_dir,
+        PROJECTS_DIR,
+        extract_strings,
+        list_project_dirs,
+        path_to_dirname,
+        preserve_mtime,
+        print_sessions,
+        require_projects_dir,
         resolve_path,
     )
 except ImportError:
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     from utils import (  # type: ignore[no-redef]
-        PROJECTS_DIR, dirname_to_path, extract_strings, list_project_dirs,
-        path_to_dirname, preserve_mtime, print_sessions, require_projects_dir,
+        PROJECTS_DIR,
+        extract_strings,
+        list_project_dirs,
+        path_to_dirname,
+        preserve_mtime,
+        print_sessions,
+        require_projects_dir,
         resolve_path,
     )
 
@@ -43,33 +53,33 @@ from detect_secrets.settings import transient_settings
 # All detect-secrets plugins including entropy detectors.
 # Pre-filtering by keyword hints keeps this fast even on large histories.
 DETECT_SECRETS_SETTINGS = {
-    "plugins_used": [
-        {"name": "ArtifactoryDetector"},
-        {"name": "AWSKeyDetector"},
-        {"name": "AzureStorageKeyDetector"},
-        {"name": "Base64HighEntropyString", "limit": 4.5},
-        {"name": "BasicAuthDetector"},
-        {"name": "CloudantDetector"},
-        {"name": "DiscordBotTokenDetector"},
-        {"name": "GitHubTokenDetector"},
-        {"name": "GitLabTokenDetector"},
-        {"name": "HexHighEntropyString", "limit": 3.0},
-        {"name": "IbmCloudIamDetector"},
-        {"name": "IbmCosHmacDetector"},
-        {"name": "JwtTokenDetector"},
-        {"name": "KeywordDetector"},
-        {"name": "MailchimpDetector"},
-        {"name": "NpmDetector"},
-        {"name": "OpenAIDetector"},
-        {"name": "PrivateKeyDetector"},
-        {"name": "PypiTokenDetector"},
-        {"name": "SendGridDetector"},
-        {"name": "SlackDetector"},
-        {"name": "SoftlayerDetector"},
-        {"name": "SquareOAuthDetector"},
-        {"name": "StripeDetector"},
-        {"name": "TelegramBotTokenDetector"},
-        {"name": "TwilioKeyDetector"},
+    'plugins_used': [
+        {'name': 'ArtifactoryDetector'},
+        {'name': 'AWSKeyDetector'},
+        {'name': 'AzureStorageKeyDetector'},
+        {'name': 'Base64HighEntropyString', 'limit': 4.5},
+        {'name': 'BasicAuthDetector'},
+        {'name': 'CloudantDetector'},
+        {'name': 'DiscordBotTokenDetector'},
+        {'name': 'GitHubTokenDetector'},
+        {'name': 'GitLabTokenDetector'},
+        {'name': 'HexHighEntropyString', 'limit': 3.0},
+        {'name': 'IbmCloudIamDetector'},
+        {'name': 'IbmCosHmacDetector'},
+        {'name': 'JwtTokenDetector'},
+        {'name': 'KeywordDetector'},
+        {'name': 'MailchimpDetector'},
+        {'name': 'NpmDetector'},
+        {'name': 'OpenAIDetector'},
+        {'name': 'PrivateKeyDetector'},
+        {'name': 'PypiTokenDetector'},
+        {'name': 'SendGridDetector'},
+        {'name': 'SlackDetector'},
+        {'name': 'SoftlayerDetector'},
+        {'name': 'SquareOAuthDetector'},
+        {'name': 'StripeDetector'},
+        {'name': 'TelegramBotTokenDetector'},
+        {'name': 'TwilioKeyDetector'},
     ],
 }
 
@@ -77,16 +87,16 @@ DETECT_SECRETS_SETTINGS = {
 # Helpers
 # ---------------------------------------------------------------------------
 
-REDACT_MARKER = "***REDACTED***"
+REDACT_MARKER = '***REDACTED***'
 
 
 def redact(value):
     """Replace middle portion with ***REDACTED***, keeping prefix/suffix for identification."""
     if len(value) <= 12:
-        return value[:3] + "***REDACTED***"
+        return value[:3] + '***REDACTED***'
     prefix_len = min(8, len(value) // 4)
     suffix_len = min(4, len(value) // 6)
-    return value[:prefix_len] + "***REDACTED***" + value[-suffix_len:]
+    return value[:prefix_len] + '***REDACTED***' + value[-suffix_len:]
 
 
 def is_false_positive(secret_val):
@@ -101,23 +111,29 @@ def is_false_positive(secret_val):
 
     # Exact known false positives
     FALSE_POSITIVES = {
-        "password", "changeme", "xxxxxxxx", "xxxxxxxxxxxxxxxx",
-        "sk-ant-xxx", "sk-ant-xxxxxxxxxxxxxxxxxxxx",
-        "your-api-key-here", "your_api_key_here",
-        "placeholder", "example", "12345678",
+        'password',
+        'changeme',
+        'xxxxxxxx',
+        'xxxxxxxxxxxxxxxx',
+        'sk-ant-xxx',
+        'sk-ant-xxxxxxxxxxxxxxxxxxxx',
+        'your-api-key-here',
+        'your_api_key_here',
+        'placeholder',
+        'example',
+        '12345678',
     }
     if sv_lower in FALSE_POSITIVES:
         return True
 
     # All same char or very low entropy placeholder
-    stripped = sv_lower.replace("-", "").replace("_", "")
+    stripped = sv_lower.replace('-', '').replace('_', '')
     if len(stripped) > 0 and len(set(stripped)) <= 2:
         return True
 
     # Test/mock/fake values (e.g., test-jwt-secret, mock_api_key, fake-token-123)
     if re.match(
-        r'^(?:test|mock|fake|dummy|example|sample|demo|foo|bar|baz|my|temp|tmp)'
-        r'[-_.]',
+        r'^(?:test|mock|fake|dummy|example|sample|demo|foo|bar|baz|my|temp|tmp)' r'[-_.]',
         sv_lower,
     ):
         return True
@@ -143,10 +159,7 @@ def is_false_positive(secret_val):
 
     # Short descriptive names that aren't real secrets (admin-key, user-key-123, etc.)
     if re.match(
-        r'^(?:admin|user|test|dev|local|special|default|internal)'
-        r'[-_]?'
-        r'(?:key|secret|token|password|pwd|credential|session)?'
-        r'[-_]?\d*$',
+        r'^(?:admin|user|test|dev|local|special|default|internal)' r'[-_]?' r'(?:key|secret|token|password|pwd|credential|session)?' r'[-_]?\d*$',
         sv_lower,
     ):
         return True
@@ -200,7 +213,7 @@ def scan_project(project_dir, project_name, dry_run):
     _start = time.monotonic()
 
     def _elapsed():
-        return f"{time.monotonic() - _start:.1f}s"
+        return f'{time.monotonic() - _start:.1f}s'
 
     # Strategy: for each JSONL file, extract text content that passes the hint
     # filter into a single temp file with a line-number mapping, then scan once
@@ -214,7 +227,7 @@ def scan_project(project_dir, project_name, dry_run):
                 continue
             filepath = os.path.join(project_dir, fname)
 
-            with open(filepath, 'r', errors='replace') as fh:
+            with open(filepath, errors='replace') as fh:
                 raw_lines = fh.readlines()
 
             # Build combined text file + mapping from temp line -> jsonl_line_num
@@ -231,7 +244,7 @@ def scan_project(project_dir, project_name, dry_run):
                     continue
 
                 for text in extract_strings(entry):
-                    for subline in text.split("\n"):
+                    for subline in text.split('\n'):
                         subline = subline.strip()
                         if not subline or not HINT_RE.search(subline):
                             continue
@@ -242,10 +255,8 @@ def scan_project(project_dir, project_name, dry_run):
             if not tmp_lines:
                 continue
 
-            with tempfile.NamedTemporaryFile(
-                mode='w', suffix='.py', delete=False
-            ) as tmp:
-                tmp.write("\n".join(tmp_lines) + "\n")
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as tmp:
+                tmp.write('\n'.join(tmp_lines) + '\n')
                 tmp_path = tmp.name
 
             try:
@@ -264,19 +275,26 @@ def scan_project(project_dir, project_name, dry_run):
 
                 raw_line = raw_lines[jsonl_ln - 1]
                 secret_val = secret.secret_value
+                if secret_val is None:
+                    continue
 
                 # Verify the secret actually appears in the raw JSONL line
                 escaped_val = secret_val.replace('\\', '\\\\').replace('"', '\\"')
                 if secret_val not in raw_line and escaped_val not in raw_line:
                     continue
 
-                findings.append((
-                    filepath, jsonl_ln,
-                    secret.type, secret_val, redact(secret_val),
-                ))
+                findings.append(
+                    (
+                        filepath,
+                        jsonl_ln,
+                        secret.type,
+                        secret_val,
+                        redact(secret_val),
+                    )
+                )
 
     if not findings:
-        print(f"  No secrets found in {project_name} ({_elapsed()})")
+        print(f'  No secrets found in {project_name} ({_elapsed()})')
         return 0
 
     # Deduplicate by (file, line, value)
@@ -289,7 +307,7 @@ def scan_project(project_dir, project_name, dry_run):
             unique.append(f)
     findings = unique
 
-    print(f"\n  Found {len(findings)} secret(s) in {project_name}:\n")
+    print(f'\n  Found {len(findings)} secret(s) in {project_name}:\n')
 
     # Group by file
     by_file = {}
@@ -298,14 +316,14 @@ def scan_project(project_dir, project_name, dry_run):
 
     for filepath, items in sorted(by_file.items()):
         fname = os.path.basename(filepath)
-        print(f"  {fname}:")
+        print(f'  {fname}:')
         for line_num, stype, value, redacted_val in items:
-            print(f"    Line {line_num}: {stype}")
-            print(f"      {redacted_val}")
+            print(f'    Line {line_num}: {stype}')
+            print(f'      {redacted_val}')
         print()
 
     if dry_run:
-        print(f"  [dry-run] No changes made. ({_elapsed()})")
+        print(f'  [dry-run] No changes made. ({_elapsed()})')
         return 42  # signal: findings exist but not redacted
 
     # Group findings by file so we read/write each file only once
@@ -314,27 +332,27 @@ def scan_project(project_dir, project_name, dry_run):
         by_file_for_redact.setdefault(filepath, []).append((line_num, value, redacted_val))
 
     # Back up files before redacting (stored outside ~/.claude to avoid interference)
-    backup_root = os.path.join(os.path.expanduser("~"), ".claude-history-backups")
-    timestamp = datetime.now().strftime("%Y%m%dT%H%M%S")
+    backup_root = os.path.join(os.path.expanduser('~'), '.claude-history-backups')
+    timestamp = datetime.now().strftime('%Y%m%dT%H%M%S')
     backup_dir = os.path.join(backup_root, timestamp)
     os.makedirs(backup_dir, exist_ok=True)
 
     for filepath in by_file_for_redact:
         # Preserve directory structure relative to ~/.claude/projects/
-        projects_dir = os.path.join(os.path.expanduser("~"), ".claude", "projects")
+        projects_dir = os.path.join(os.path.expanduser('~'), '.claude', 'projects')
         rel = os.path.relpath(filepath, projects_dir)
         dest = os.path.join(backup_dir, rel)
         os.makedirs(os.path.dirname(dest), exist_ok=True)
         shutil.copy2(filepath, dest)
 
-    print(f"  Backed up {len(by_file_for_redact)} file(s) to {backup_dir}")
+    print(f'  Backed up {len(by_file_for_redact)} file(s) to {backup_dir}')
 
     # Perform redaction
     redacted_count = 0
     files_modified = set()
 
     for filepath, items in by_file_for_redact.items():
-        with open(filepath, 'r', errors='replace') as fh:
+        with open(filepath, errors='replace') as fh:
             lines = fh.readlines()
 
         modified = False
@@ -361,7 +379,7 @@ def scan_project(project_dir, project_name, dry_run):
                 with open(filepath, 'w') as fh:
                     fh.writelines(lines)
 
-    print(f"  Redacted {redacted_count} secret(s) across {len(files_modified)} file(s). ({_elapsed()})")
+    print(f'  Redacted {redacted_count} secret(s) across {len(files_modified)} file(s). ({_elapsed()})')
     return 0
 
 
@@ -369,24 +387,25 @@ def scan_project(project_dir, project_name, dry_run):
 # Main
 # ---------------------------------------------------------------------------
 
+
 def main():
     require_projects_dir()
 
     dry_run = False
     scan_all = False
-    target_path = ""
+    target_path = ''
 
     # --- Parse arguments ---
     for arg in sys.argv[1:]:
-        if arg == "--dry-run":
+        if arg == '--dry-run':
             dry_run = True
-        elif arg == "--all":
+        elif arg == '--all':
             scan_all = True
-        elif arg in ("--help", "-h"):
-            print("Usage:")
-            print("  claude-redact-secrets                  # interactive (pick a project)")
-            print("  claude-redact-secrets <project-path>   # scan specific project")
-            print("  claude-redact-secrets --all            # scan all projects")
+        elif arg in ('--help', '-h'):
+            print('Usage:')
+            print('  claude-redact-secrets                  # interactive (pick a project)')
+            print('  claude-redact-secrets <project-path>   # scan specific project')
+            print('  claude-redact-secrets --all            # scan all projects')
             print("  claude-redact-secrets --dry-run        # report only, don't redact")
             sys.exit(0)
         else:
@@ -400,15 +419,15 @@ def main():
             project_dirs.append((full_path, decoded))
 
         if not project_dirs:
-            print("No project histories found.")
+            print('No project histories found.')
             sys.exit(0)
 
-        print(f"Scanning {len(project_dirs)} project(s) for secrets...")
-        print("")
+        print(f'Scanning {len(project_dirs)} project(s) for secrets...')
+        print('')
 
         total_found = 0
         for pdir, pname in project_dirs:
-            print(f"Project: {pname}")
+            print(f'Project: {pname}')
             status = scan_project(pdir, pname, dry_run)
             if status == 42:
                 total_found += 1
@@ -417,31 +436,31 @@ def main():
     elif target_path:
         # Direct mode - resolve path
         target_path = resolve_path(target_path)
-        target_path = target_path.rstrip("/")
+        target_path = target_path.rstrip('/')
         target_dir_name = path_to_dirname(target_path)
         target_project_dir = os.path.join(PROJECTS_DIR, target_dir_name)
 
         if not os.path.isdir(target_project_dir):
-            print(f"No Claude history found for: {target_path}")
-            print(f"  (looked in {target_project_dir})")
+            print(f'No Claude history found for: {target_path}')
+            print(f'  (looked in {target_project_dir})')
             sys.exit(1)
 
-        print(f"Scanning project: {target_path}")
-        print("")
+        print(f'Scanning project: {target_path}')
+        print('')
         scan_project(target_project_dir, target_path, dry_run)
         sys.exit(0)
 
     else:
         # Interactive mode
-        print("claude-redact-secrets - Find and redact secrets in Claude Code history")
-        print("")
+        print('claude-redact-secrets - Find and redact secrets in Claude Code history')
+        print('')
         if dry_run:
-            print("  (dry-run mode - will report but not redact)")
-            print("")
+            print('  (dry-run mode - will report but not redact)')
+            print('')
 
         # List all project directories
-        print("Select a project to scan (or use --all to scan everything):")
-        print("")
+        print('Select a project to scan (or use --all to scan everything):')
+        print('')
 
         candidates = []  # (full_path, decoded_path)
         idx = 0
@@ -450,74 +469,74 @@ def main():
             candidates.append((full_path, decoded))
 
             if os.path.isdir(decoded):
-                print(f"     {idx}) {decoded}")
+                print(f'     {idx}) {decoded}')
             else:
-                print(f"  *  {idx}) {decoded}  (directory no longer exists)")
+                print(f'  *  {idx}) {decoded}  (directory no longer exists)')
             print_sessions(full_path)
-            print("")
+            print('')
 
         if idx == 0:
-            print("  (no project histories found)")
+            print('  (no project histories found)')
             sys.exit(0)
 
-        print("---")
+        print('---')
         try:
             choice = input("Scan which project? (#, 'a' for all, or 'q' to quit): ")
         except (EOFError, KeyboardInterrupt):
             print()
-            print("Cancelled.")
+            print('Cancelled.')
             sys.exit(0)
 
         choice = choice.strip()
 
-        if choice.lower() in ("q", ""):
-            print("Cancelled.")
+        if choice.lower() in ('q', ''):
+            print('Cancelled.')
             sys.exit(0)
 
-        if choice.lower() == "a":
-            print("")
-            print(f"Scanning all {len(candidates)} project(s)...")
-            print("")
+        if choice.lower() == 'a':
+            print('')
+            print(f'Scanning all {len(candidates)} project(s)...')
+            print('')
             for pdir, pname in candidates:
-                print(f"Project: {pname}")
+                print(f'Project: {pname}')
                 scan_project(pdir, pname, dry_run)
             sys.exit(0)
 
         try:
             choice_num = int(choice)
         except ValueError:
-            print("Invalid choice.")
+            print('Invalid choice.')
             sys.exit(1)
 
         if choice_num < 1 or choice_num > idx:
-            print("Invalid choice.")
+            print('Invalid choice.')
             sys.exit(1)
 
         selected_dir, selected_name = candidates[choice_num - 1]
 
-        print("")
-        print(f"Scanning: {selected_name}")
-        print("")
+        print('')
+        print(f'Scanning: {selected_name}')
+        print('')
 
         if not dry_run:
             # Preview first (dry run), then confirm
             status = scan_project(selected_dir, selected_name, True)
             if status == 42:
-                print("")
+                print('')
                 try:
-                    confirm = input("Redact these secrets? (y/N): ")
+                    confirm = input('Redact these secrets? (y/N): ')
                 except (EOFError, KeyboardInterrupt):
                     print()
-                    print("Cancelled.")
+                    print('Cancelled.')
                     sys.exit(0)
-                if confirm.strip().lower() == "y":
-                    print("")
+                if confirm.strip().lower() == 'y':
+                    print('')
                     scan_project(selected_dir, selected_name, False)
                 else:
-                    print("Cancelled.")
+                    print('Cancelled.')
         else:
             scan_project(selected_dir, selected_name, True)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

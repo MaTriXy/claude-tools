@@ -1,0 +1,111 @@
+# Pre-commit configuration for claude-tools
+# Install with: uv run pre-commit install --hook-type commit-msg --hook-type pre-commit
+# Run manually with: uv run pre-commit run --all-files
+
+repos:
+  # Ruff - Fast Python linter and formatter
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.0
+    hooks:
+      - id: ruff
+        name: ruff lint
+        description: Run ruff linter
+        args: [--fix]
+        types: [python]
+
+      - id: ruff-format
+        name: ruff format
+        description: Run ruff formatter
+        types: [python]
+
+  # Built-in pre-commit hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        name: trim trailing whitespace
+        exclude: \.claude/settings\.local\.json$
+
+      - id: end-of-file-fixer
+        name: fix end of files
+        exclude: \.claude/settings\.local\.json$
+
+      - id: mixed-line-ending
+        name: normalize line endings
+        args: [--fix=lf]
+        exclude: \.claude/settings\.local\.json$
+
+      - id: check-merge-conflict
+        name: check for merge conflicts
+
+      - id: check-added-large-files
+        name: check for large files
+        args: ['--maxkb=1000']
+
+      - id: check-ast
+        name: check python ast
+        types: [python]
+
+      - id: check-builtin-literals
+        name: check builtin type constructor use (Python)
+        types: [python]
+
+      - id: debug-statements
+        name: debug statements (Python)
+        types: [python]
+
+      - id: check-json
+        name: check json
+
+      - id: check-yaml
+        name: check yaml
+        args: [--allow-multiple-documents]
+
+      - id: pretty-format-json
+        name: pretty format JSON
+        args: [--autofix]
+        exclude: \.claude/settings\.local\.json$
+
+  # Detect secrets
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        args: ["--baseline", ".secrets.baseline"]
+
+  # Type checking (uses uv so all deps are available)
+  - repo: local
+    hooks:
+      - id: type-checking
+        name: type checking (mypy)
+        entry: bash -c 'uv run mypy src/'
+        language: system
+        types: [python]
+        pass_filenames: false
+        always_run: true
+
+      - id: type-checking-pyright
+        name: type checking (basedpyright)
+        entry: bash -c 'uv run basedpyright src/'
+        language: system
+        types: [python]
+        pass_filenames: false
+        always_run: true
+
+  # Local hooks
+  - repo: local
+    hooks:
+      - id: check-claude-attribution
+        name: check commit message for Claude attribution
+        description: Prevent commits with Claude attribution
+        entry: bash scripts/check-claude-attribution.sh
+        language: system
+        stages: [commit-msg]
+        always_run: true
+        pass_filenames: true
+
+# Global settings
+default_stages: [pre-commit]
+fail_fast: false
+default_language_version:
+  python: python3.11

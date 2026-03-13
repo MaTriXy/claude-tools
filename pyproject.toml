@@ -20,5 +20,44 @@ claude-set-history = "claude_tools.set_history:main"
 claude-set-key = "claude_tools.set_key:main"
 claude-title-sessions = "claude_tools.title_sessions:main"
 
+[dependency-groups]
+dev = [
+    "basedpyright",
+    "mypy",
+    "pre-commit",
+    "pytest",
+    "ruff",
+]
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/claude_tools"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+indent-width = 4
+line-length = 150
+target-version = "py310"
+
+[tool.ruff.format]
+quote-style = "single"
+indent-style = "space"
+docstring-code-format = true
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = false
+warn_unused_configs = true
+ignore_missing_imports = true
+
+[tool.basedpyright]
+pythonVersion = "3.10"
+typeCheckingMode = "standard"
+
+[tool.uv]
+required-version = ">=0.10"
