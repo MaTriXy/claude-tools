@@ -1,22 +1,12 @@
-__pycache__/
-*.py[cod]
-*$py.class
-*.egg-info/
-*.egg
 dist/
 build/
 
-.venv/
 .env
 .envrc
 
 .claude/
 .idea/
 .DS_Store
-*.pstat
-.coverage
-htmlcov/
-.pytest_cache/
 temp/
 
 node_modules/

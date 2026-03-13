@@ -4,13 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-claude-tools is a collection of Python CLI tools and hooks for managing Claude Code sessions, API keys, secrets, and history. Provides utilities for session search, secret redaction, history management, API key storage (macOS Keychain), and session titling.
+claude-tools is a collection of TypeScript CLI tools and hooks for managing Claude Code sessions, API keys, secrets, and history. Provides utilities for session search, secret redaction, history management, API key storage (macOS Keychain), and session titling.
 
 ## Quick Setup
 
 ```bash
-uv sync --group dev
-uv run pre-commit install --hook-type commit-msg --hook-type pre-commit
+cd ts && npm install
+pre-commit install --hook-type commit-msg --hook-type pre-commit
 ```
 
 ## Code Provenance Policy
@@ -31,7 +31,7 @@ uv run pre-commit install --hook-type commit-msg --hook-type pre-commit
 
 ## Test Policy
 
-**Every feature addition or code change must include corresponding test updates.** Use pytest for all tests. Tests should be placed in the `tests/` directory mirroring the source structure.
+**Every feature addition or code change must include corresponding test updates.** Tests live in `ts/src/__tests__/` and use vitest.
 
 - Always add tests for new features
 - Update existing tests when modifying behavior
@@ -62,21 +62,26 @@ uv run pre-commit install --hook-type commit-msg --hook-type pre-commit
 
 ```
 claude-tools/
-├── src/claude_tools/
-│   ├── __init__.py
-│   ├── find_session.py       # Session search/filtering
-│   ├── redact_secrets.py     # Secret redaction in session files
-│   ├── set_history.py        # History management
-│   ├── set_key.py            # API key storage (macOS Keychain)
-│   ├── title_sessions.py     # LLM-powered session titling
-│   └── utils.py              # Shared utilities
-├── hooks/                    # Git hooks
+├── ts/
+│   ├── src/
+│   │   ├── bin/                    # CLI entry points
+│   │   │   └── llm-safety-check.ts
+│   │   ├── __tests__/              # Tests (vitest)
+│   │   ├── find-session.ts         # Session search/filtering
+│   │   ├── redact-secrets.ts       # Secret redaction in session files
+│   │   ├── set-history.ts          # History management
+│   │   ├── set-key.ts              # API key storage (macOS Keychain)
+│   │   ├── title-sessions.ts       # LLM-powered session titling
+│   │   ├── llm-safety-check.ts     # LLM-powered command safety hook
+│   │   ├── utils.ts                # Shared utilities
+│   │   ├── types.ts                # Shared type definitions
+│   │   └── index.ts                # Package exports
+│   └── package.json
 ├── scripts/
 │   └── check-claude-attribution.sh
-├── pyproject.toml
-└── tests/
+└── .pre-commit-config.yaml
 ```
 
 ## Architecture
 
-Each CLI tool is a standalone module with a `main()` entry point registered in `pyproject.toml` under `[project.scripts]`. Shared logic lives in `utils.py`. The tools operate on Claude Code session `.jsonl` files under `~/.claude/projects/`.
+Each CLI tool is a standalone module with a bin entry point under `ts/src/bin/`. Shared logic lives in `utils.ts` and types in `types.ts`. The tools operate on Claude Code session `.jsonl` files under `~/.claude/projects/`.
