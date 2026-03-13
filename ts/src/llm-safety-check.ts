@@ -37,10 +37,7 @@ Do not output anything other than the JSON object.`;
  * Returns the parsed decision, or null if the API call fails (in which case
  * the hook should fall through to normal Claude Code permission handling).
  */
-export async function checkCommandSafety(
-    toolName: string,
-    toolInput: { command?: string; description?: string },
-): Promise<SafetyCheckResult | null> {
+export async function checkCommandSafety(toolName: string, toolInput: { command?: string; description?: string }): Promise<SafetyCheckResult | null> {
     const apiKey = getApiKey();
     if (!apiKey) {
         process.stderr.write("LLM safety check: no API key found (env or Keychain)\n");
@@ -50,10 +47,7 @@ export async function checkCommandSafety(
     const command = toolInput.command ?? "";
     const description = toolInput.description ?? "";
 
-    const userMessage =
-        `Tool: ${toolName}\n` +
-        `Command: ${command}\n` +
-        `Description: ${description || "(none provided)"}`;
+    const userMessage = `Tool: ${toolName}\n` + `Command: ${command}\n` + `Description: ${description || "(none provided)"}`;
 
     const body = JSON.stringify({
         model: SAFETY_MODEL,
@@ -94,7 +88,10 @@ export async function checkCommandSafety(
                 break;
             }
         }
-        text = text.replace(/```json/g, "").replace(/```/g, "").trim();
+        text = text
+            .replace(/```json/g, "")
+            .replace(/```/g, "")
+            .trim();
         return JSON.parse(text) as SafetyCheckResult;
     } catch (e) {
         process.stderr.write(`LLM safety check failed: ${e instanceof Error ? e.message : String(e)}\n`);

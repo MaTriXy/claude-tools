@@ -5,7 +5,19 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import type { SearchMatch, ProjectSearchResult, LlmSearchResult, ProjectDir } from "./types.js";
-import { PROJECTS_DIR, extractStrings, listProjectDirs, listSessions, parseSession, pathToDirname, requireProjectsDir, sessionDescription, callClaude, requireApiKey, DEFAULT_MODEL } from "./utils.js";
+import {
+    PROJECTS_DIR,
+    extractStrings,
+    listProjectDirs,
+    listSessions,
+    parseSession,
+    pathToDirname,
+    requireProjectsDir,
+    sessionDescription,
+    callClaude,
+    requireApiKey,
+    DEFAULT_MODEL,
+} from "./utils.js";
 
 // ---------------------------------------------------------------------------
 // Text search
@@ -183,8 +195,11 @@ export async function llmSearch(projectDirs: ProjectDir[], query: string, apiKey
     }
 
     // Phase 1: exhaustive local text search
-    const allHits: Array<{ projectName: string; session: ReturnType<typeof parseSession>; termResults: Map<string, { count: number; snippets: string[] }> }> =
-        [];
+    const allHits: Array<{
+        projectName: string;
+        session: ReturnType<typeof parseSession>;
+        termResults: Map<string, { count: number; snippets: string[] }>;
+    }> = [];
 
     for (const pd of projectDirs) {
         let sessions;
@@ -218,8 +233,17 @@ export async function llmSearch(projectDirs: ProjectDir[], query: string, apiKey
         for (const [, { snippets }] of termResults) {
             allSnippets.push(...snippets);
         }
-        const snipStr = allSnippets.length > 0 ? "\n    Snippets: " + allSnippets.slice(0, 3).map((s) => s.slice(0, 100)).join(" | ") : "";
-        hitLines.push(`${i + 1}. Project: ${projectName}\n   Session: ${desc} (${s.msgCount} msgs, ${cr} -> ${mod})\n   Matches: ${hitsStr}${snipStr}`);
+        const snipStr =
+            allSnippets.length > 0
+                ? "\n    Snippets: " +
+                  allSnippets
+                      .slice(0, 3)
+                      .map((s) => s.slice(0, 100))
+                      .join(" | ")
+                : "";
+        hitLines.push(
+            `${i + 1}. Project: ${projectName}\n   Session: ${desc} (${s.msgCount} msgs, ${cr} -> ${mod})\n   Matches: ${hitsStr}${snipStr}`
+        );
     }
 
     const prompt =

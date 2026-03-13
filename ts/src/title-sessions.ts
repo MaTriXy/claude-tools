@@ -5,7 +5,18 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import type { TitleResult, TitleProjectResult } from "./types.js";
-import { PROJECTS_DIR, callClaude, listProjectDirs, listSessions, pathToDirname, preserveMtime, requireApiKey, requireProjectsDir, sessionDescription, DEFAULT_MODEL } from "./utils.js";
+import {
+    PROJECTS_DIR,
+    callClaude,
+    listProjectDirs,
+    listSessions,
+    pathToDirname,
+    preserveMtime,
+    requireApiKey,
+    requireProjectsDir,
+    sessionDescription,
+    DEFAULT_MODEL,
+} from "./utils.js";
 
 const TITLE_PROMPT = `Generate a succinct title for a coding session based on the provided description.
 

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-claude-tools is a collection of TypeScript CLI tools and hooks for managing Claude Code sessions, API keys, secrets, and history. Provides utilities for session search, secret redaction, history management, API key storage (macOS Keychain), and session titling.
+claude-tools is a TypeScript library for managing Claude Code sessions, API keys, secrets, and history. Provides modules for session search, secret redaction, history management, API key storage (macOS Keychain), session titling, and an LLM-powered command safety hook. Used as a dependency by [claude-tools-mcp](https://github.com/seidnerj/claude-tools-mcp) which exposes these features as MCP tools.
 
 ## Quick Setup
 
@@ -41,6 +41,7 @@ pre-commit install --hook-type commit-msg --hook-type pre-commit
 ## Commit and Push Rules
 
 **When creating git commits, Claude MUST follow these rules without exception:**
+
 - **NEVER COMMIT WITHOUT EXPLICIT USER CONSENT**
 - **NEVER note Claude as a user on any commit** - no author, co-author, or attribution
 - NEVER include "Generated with [Claude Code]" or "Co-Authored-By: Claude" in commit messages
@@ -51,9 +52,11 @@ pre-commit install --hook-type commit-msg --hook-type pre-commit
 ## Git Guidelines
 
 **File Operations:**
+
 - **ALWAYS use `git mv` instead of `mv`** when moving or renaming files in the repository
 
 **Commit Guidelines:**
+
 - Never commit OR push without explicit user permission
 - Do NOT add ANY AI attribution messages or tool references to commit messages
 - **ALWAYS split unrelated changes into separate commits**
@@ -84,4 +87,4 @@ claude-tools/
 
 ## Architecture
 
-Each CLI tool is a standalone module with a bin entry point under `ts/src/bin/`. Shared logic lives in `utils.ts` and types in `types.ts`. The tools operate on Claude Code session `.jsonl` files under `~/.claude/projects/`.
+Each feature is a standalone module exporting functions consumed by claude-tools-mcp. The only direct CLI entry point is `llm-safety-check.ts` (a Claude Code `PreToolUse` hook). Shared logic lives in `utils.ts` and types in `types.ts`. The modules operate on Claude Code session `.jsonl` files under `~/.claude/projects/`.

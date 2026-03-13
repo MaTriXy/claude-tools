@@ -171,14 +171,32 @@ describe("sessionDescription", () => {
 
     it("falls back to summary", () => {
         expect(
-            sessionDescription({ sessionId: "x", msgCount: 1, customTitle: "", aiTitle: "", summary: "Sum", firstPrompt: "Prompt", created: "", modified: "" })
+            sessionDescription({
+                sessionId: "x",
+                msgCount: 1,
+                customTitle: "",
+                aiTitle: "",
+                summary: "Sum",
+                firstPrompt: "Prompt",
+                created: "",
+                modified: "",
+            })
         ).toBe("Sum");
     });
 
     it("falls back to truncated first prompt", () => {
         const longPrompt = "a".repeat(100);
         expect(
-            sessionDescription({ sessionId: "x", msgCount: 1, customTitle: "", aiTitle: "", summary: "", firstPrompt: longPrompt, created: "", modified: "" })
+            sessionDescription({
+                sessionId: "x",
+                msgCount: 1,
+                customTitle: "",
+                aiTitle: "",
+                summary: "",
+                firstPrompt: longPrompt,
+                created: "",
+                modified: "",
+            })
         ).toBe("a".repeat(60));
     });
 });

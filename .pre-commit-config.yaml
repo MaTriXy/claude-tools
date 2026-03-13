@@ -35,7 +35,7 @@ repos:
           - id: pretty-format-json
             name: pretty format JSON
             args: [--autofix, --indent, "4"]
-            exclude: \.claude/settings\.local\.json$
+            exclude: (\.claude/settings\.local\.json$|^ts/)
 
     # Detect secrets
     - repo: https://github.com/Yelp/detect-secrets
@@ -56,7 +56,7 @@ repos:
 
           - id: eslint
             name: eslint
-            entry: npx --prefix ts eslint --fix
+            entry: bash -c 'cd ts && npx eslint --fix --no-error-on-unmatched-pattern "$@"' --
             language: system
             types: [ts]
             exclude: "(node_modules|dist)/"

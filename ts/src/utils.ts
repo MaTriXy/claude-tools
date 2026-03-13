@@ -124,7 +124,12 @@ export function requireApiKey(): string {
 // ---------------------------------------------------------------------------
 
 /** Call the Claude API and return the text response. */
-export async function callClaude(apiKey: string, model: string, messages: Array<{ role: string; content: string }>, maxTokens = 1024): Promise<string> {
+export async function callClaude(
+    apiKey: string,
+    model: string,
+    messages: Array<{ role: string; content: string }>,
+    maxTokens = 1024
+): Promise<string> {
     const body = JSON.stringify({ model, max_tokens: maxTokens, messages });
 
     const resp = await fetch("https://api.anthropic.com/v1/messages", {

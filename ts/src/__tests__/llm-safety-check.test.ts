@@ -105,7 +105,7 @@ describe("checkCommandSafety", () => {
         mockFetch.mockResolvedValueOnce({
             ok: true,
             json: async () => ({
-                content: [{ type: "text", text: "```json\n{\"decision\": \"prompt\", \"reason\": \"Ambiguous\"}\n```" }],
+                content: [{ type: "text", text: '```json\n{"decision": "prompt", "reason": "Ambiguous"}\n```' }],
             }),
         });
 
