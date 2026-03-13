@@ -44,7 +44,7 @@ All CLI tools require `tsx` installed globally (`npm install -g tsx`). Each tool
 
 ### Installation
 
-Symlink the CLI tools to your PATH:
+From a cloned repo (requires `tsx`):
 
 ```bash
 BIN_DIR="$(pwd)/src/bin"
@@ -53,6 +53,12 @@ sudo ln -sf "$BIN_DIR/claude-redact-secrets.ts" /usr/local/bin/claude-redact-sec
 sudo ln -sf "$BIN_DIR/claude-set-history.ts" /usr/local/bin/claude-set-history
 sudo ln -sf "$BIN_DIR/claude-set-key.ts" /usr/local/bin/claude-set-key
 sudo ln -sf "$BIN_DIR/claude-title-sessions.ts" /usr/local/bin/claude-title-sessions
+```
+
+Or via npm (no `tsx` needed):
+
+```bash
+npm install -g claude-tools
 ```
 
 ### LLM Safety Hook Setup
