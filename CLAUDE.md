@@ -65,6 +65,10 @@ pre-commit install --hook-type commit-msg --hook-type pre-commit
 - Do NOT add ANY AI attribution messages or tool references to commit messages
 - **ALWAYS split unrelated changes into separate commits**
 
+## Remote Hosts
+
+- **NEVER run `sudo` commands via SSH** - they will fail because a TTY cannot be allocated and no password can be provided interactively. Instead, tell the user what command to run manually.
+
 ## Project Structure
 
 ```
