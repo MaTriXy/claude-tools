@@ -2,23 +2,24 @@
 // Synonym expansion for fuzzy session search
 // ---------------------------------------------------------------------------
 
+// Each group maps specific/uncommon terms to their synonyms.
+// IMPORTANT: Avoid overly common words that appear in most coding sessions
+// (e.g. "issue", "error", "request", "fix", "bug"). These cause massive
+// false positive rates when used in broad searches. Only include terms
+// that are specific enough to be meaningful search discriminators.
 const SYNONYM_GROUPS: string[][] = [
-    ["ticket", "support case", "issue", "request", "bug report"],
-    ["open", "create", "file", "submit", "raise"],
-    ["fix", "resolve", "patch", "repair"],
+    ["ticket", "support case", "support ticket", "bug report"],
     ["deploy", "release", "ship", "push to production"],
-    ["error", "exception", "failure", "crash", "bug"],
+    ["crash", "exception", "stack trace", "segfault"],
     ["config", "configuration", "settings", "preferences"],
     ["auth", "authentication", "login", "sign in", "sso"],
-    ["api", "endpoint", "route"],
     ["db", "database", "rds", "postgres", "sql"],
-    ["webhook", "callback", "hook"],
-    ["sync", "synchronize", "synchronization", "import"],
+    ["webhook", "callback"],
+    ["sync", "synchronize", "synchronization"],
     ["missing", "not found", "absent", "disappeared"],
     ["duplicate", "double", "repeated", "twice"],
-    ["env", "environment", "staging", "production"],
-    ["k8s", "kubernetes", "cluster", "pod"],
-    ["ci", "ci/cd", "pipeline", "workflow", "github actions"],
+    ["k8s", "kubernetes"],
+    ["ci/cd", "pipeline", "github actions"],
     ["pr", "pull request", "merge request"],
     ["repo", "repository"],
     ["infra", "infrastructure"],
