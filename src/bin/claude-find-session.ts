@@ -150,11 +150,11 @@ async function main(): Promise<void> {
     } else {
         let results: ProjectSearchResult[];
         if (scanAll) {
-            results = searchAllProjects(searchText, caseSensitive);
+            results = searchAllProjects(searchText, { caseSensitive });
         } else if (targetPath) {
-            results = [searchProjectByPath(targetPath, searchText, caseSensitive)];
+            results = [searchProjectByPath(targetPath, searchText, { caseSensitive })];
         } else {
-            results = [searchProjectByPath(process.cwd(), searchText, caseSensitive)];
+            results = [searchProjectByPath(process.cwd(), searchText, { caseSensitive })];
         }
         printResults(results);
     }

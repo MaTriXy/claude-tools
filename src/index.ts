@@ -2,7 +2,20 @@
 // Library entry point - re-exports all modules for use as a dependency
 // ---------------------------------------------------------------------------
 
-export { searchProject, searchAllProjects, searchProjectByPath, llmSearch, llmSearchAll, llmSearchByPath } from "./find-session.js";
+export {
+    searchProject,
+    searchAllProjects,
+    searchProjectByPath,
+    llmSearch,
+    llmSearchAll,
+    llmSearchByPath,
+    findSessionFile,
+    readSession,
+    searchSession,
+    getCurrentSession,
+    generateSessionNonce,
+} from "./find-session.js";
+export { getSynonyms, expandWithSynonyms } from "./synonyms.js";
 export { titleProject, titleAllProjects, titleProjectByPath } from "./title-sessions.js";
 export { scanProject, scanAllProjects, scanProjectByPath, requireDetectSecrets } from "./redact-secrets.js";
 export { moveHistory, cleanBrokenResumeArtifacts } from "./set-history.js";

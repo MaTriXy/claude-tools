@@ -49,6 +49,52 @@ export interface LlmSearchResult {
     hitCount: number;
 }
 
+/** Options for text search across sessions */
+export interface SearchOptions {
+    caseSensitive?: boolean;
+    contextChars?: number;
+    maxSnippets?: number;
+    after?: string;
+    before?: string;
+    fuzzy?: boolean;
+    excludeSessions?: string[];
+}
+
+/** A single message from a session file */
+export interface SessionMessage {
+    index: number;
+    type: string;
+    timestamp: string;
+    content: string;
+}
+
+/** Result of reading messages from a session */
+export interface ReadSessionResult {
+    sessionId: string;
+    projectPath: string;
+    totalMessages: number;
+    offset: number;
+    limit: number;
+    messages: SessionMessage[];
+}
+
+/** A search match within a single session message */
+export interface SessionSearchMatch {
+    messageIndex: number;
+    messageType: string;
+    timestamp: string;
+    matchCount: number;
+    snippets: string[];
+}
+
+/** Result of searching within a single session */
+export interface SessionSearchResult {
+    sessionId: string;
+    projectPath: string;
+    totalMatches: number;
+    matches: SessionSearchMatch[];
+}
+
 /** A detected secret in a session file */
 export interface SecretFinding {
     filepath: string;
