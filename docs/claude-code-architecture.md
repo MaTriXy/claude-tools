@@ -62,7 +62,8 @@ Claude API (api.anthropic.com)
 
 - `extension.js` - Single minified bundle (~1.5MB, ~78K lines beautified)
 - `package.json` - Extension manifest
-- `webview/` - Webview UI assets
+- `webview/index.js` - Webview UI bundle (~4.8MB minified, ~247K lines beautified)
+- `webview/index.css` - Webview styles
 
 **Architecture**: The extension bundles the Claude Agent SDK and uses it to spawn
 a CLI subprocess. It detects which form to use by checking the file extension -
@@ -73,6 +74,110 @@ execution, and MCP management happens in the CLI process. The extension handles:
 - VS Code integration (status bar, webview panels, commands)
 - Process lifecycle (spawn, kill, reconnect)
 - UI rendering for MCP server management, auth flows, etc.
+
+### Webview UI
+
+The chat interface is a React application rendered in a VS Code webview panel.
+It bundles Monaco Editor for code block display and uses Preact signals for
+state management. The webview communicates with the extension host via
+`postMessage`.
+
+#### Chat input
+
+The input is a **`contentEditable="plaintext-only"` div** (not a textarea).
+Key features:
+
+| Feature                       | Implementation                                                                                                                                         |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **@ mentions**                | Typing `@` triggers an autocomplete popup for files, folders, URLs, browser tabs. A hidden `mentionMirror` div tracks mention positions for alignment. |
+| **Slash commands**            | Typing `/` opens a command menu (`/compact`, `/config`, `/help`, `/terminal`, custom skills). Also triggered via toolbar button.                       |
+| **File attachment**           | Toolbar button opens native file picker. Files shown as removable chips below the input.                                                               |
+| **Image paste**               | Clipboard items checked for `image/*` type on paste.                                                                                                   |
+| **Drag and drop**             | Drop overlay ("Drop to attach as context") shown on drag-over. Files dropped on the chat container are attached.                                       |
+| **Speech-to-text**            | Mic button when input is empty. Supports toggle (click) and push-to-talk (hold). Visual recording indicator.                                           |
+| **Inline prompt suggestion**  | CLI pushes `prompt_suggestion` messages rendered as ghost text in the input. Accepted via Tab. Tracked for analytics.                                  |
+| **Message truncation**        | Input capped at 50,000 characters with truncation notice.                                                                                              |
+| **VS Code selection context** | "Include selection" toggle to attach current editor selection as context.                                                                              |
+
+#### Input footer toolbar
+
+Left to right:
+
+1. **@ context button** - Opens attachment menu (upload, add context, browse web)
+2. **/ command menu button** - Opens slash command list
+3. **Context usage indicator** - Shows `X% context used` as a progress bar
+   (`usedTokens / contextWindow`). Clickable to trigger `/compact`. Only
+   visible when usage exceeds 50%.
+4. **Selection context toggle** - Shows current file selection
+5. **Spacer**
+6. **Permission mode + effort selector** - Combined dropdown for mode
+   (default/acceptEdits/plan) and effort level (low/medium/high)
+7. **Send/Stop button** - Send arrow or stop square depending on busy state
+
+#### Message rendering
+
+Messages are rendered in a **timeline layout** with turns. Each turn contains
+groups of messages that can be collapsed.
+
+| Block type      | Rendering                                                                                                           |
+| --------------- | ------------------------------------------------------------------------------------------------------------------- |
+| **Text**        | Markdown with syntax highlighting                                                                                   |
+| **Thinking**    | Collapsible blocks with per-message and global expand toggle (`areThinkingBlocksExpanded`)                          |
+| **Tool use**    | Grouped into collapsible sections when sequential. Shows tool name, input, output. Count badge on collapsed groups. |
+| **Tool result** | Shown within tool groups, truncated for large outputs                                                               |
+| **Code blocks** | Monaco Editor instances (full syntax highlighting via `vscode-chat-code-block` URI scheme)                          |
+
+Message status dots per turn: `dotSuccess` (green), `dotFailure` (red),
+`dotProgress` (animated).
+
+#### Interactive elements
+
+- **Permission requests**: Dedicated container below messages, above input.
+  Shows tool name, input preview, allow/deny buttons. Chat area dimmed while
+  active.
+- **Plan mode**: Three modes via dropdown - `default`, `acceptEdits`, `plan`.
+  Plan review opens a markdown preview panel (`open_markdown_preview`) where
+  users can add comments (`get_plan_comments`, `remove_plan_comment`) and
+  approve/reject (`close_plan_preview`).
+- **Conversation forking**: `fork_conversation` dispatched to extension host,
+  which uses `forkSession` + `resumeSessionAt` from the SDK.
+- **Code rewind**: `rewind_code` with target message ID. Highlighted message
+  state in UI.
+
+#### Status indicators
+
+| Indicator             | Description                                                            |
+| --------------------- | ---------------------------------------------------------------------- |
+| **Context usage bar** | Token-based progress bar, clickable to compact. Only shown > 50% used. |
+| **Loading state**     | "Loading..." during session initialization                             |
+| **Error banner**      | Dismissible error with message and retry link                          |
+| **Busy/streaming**    | Send button becomes stop button. Messages show progress dots.          |
+| **Compact boundary**  | Synthetic message inserted when context compaction occurs              |
+| **Drop overlay**      | "Drop to attach as context" during drag-over                           |
+
+#### Thinking/activity spinner
+
+The webview has an animated thinking indicator (`jH1` component) that shows
+while the agent is working. It has three layers of animation:
+
+1. **Symbol prefix**: Cycles through `["·", "✢", "*", "✶", "✻", "✽"]` in a
+   ping-pong pattern every 120ms
+2. **Rotating verb**: Randomly selected from ~70 playful verbs ("Pondering",
+   "Brewing", "Noodling", "Cogitating", "Spelunking", etc.), changing at
+   escalating intervals: 2s, 3s, 5s, then every 5s thereafter
+3. **Typewriter transition**: New verb text animates character-by-character via
+   `requestAnimationFrame` at ~40ms per character with a 3-character blur trail
+
+The verb list is configurable via `spinnerVerbsConfig` (replace or extend).
+When status is `"compacting"`, the verb is overridden to "Compacting".
+Text is padded to the max verb length to prevent layout shifts.
+
+#### Keyboard shortcuts (webview)
+
+- **Enter** - Submit message
+- **Ctrl/Cmd+C** - Interrupt when busy (via extension host)
+- **Escape** - Close dialogs
+- **Tab** - Accept inline prompt suggestion
 
 ## IPC Protocol
 
