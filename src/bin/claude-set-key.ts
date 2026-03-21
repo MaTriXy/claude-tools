@@ -15,6 +15,7 @@ import {
     getKeyName,
     saveKeyName,
     captureDefaultKey,
+    pruneOrphanedKeyNames,
     listKeychainEntries,
     listCapturedKeys,
     getCapturedKey,
@@ -252,6 +253,15 @@ async function handleRename(ask: AskFn, directory: string, entries: ReturnType<t
     }
 }
 
+async function handlePrune(): Promise<void> {
+    const pruned = pruneOrphanedKeyNames();
+    if (pruned === 0) {
+        console.log("No orphaned key names found.");
+    } else {
+        console.log(`Removed ${pruned} orphaned key name${pruned === 1 ? "" : "s"}.`);
+    }
+}
+
 async function main(): Promise<void> {
     if (process.argv.includes("--help") || process.argv.includes("-h")) {
         printUsage();
@@ -291,6 +301,7 @@ async function main(): Promise<void> {
     if (hasOthers || hasCurrentKey || listCapturedKeys().length > 0) {
         options.push({ id: "rename", label: "Name a key" });
     }
+    options.push({ id: "prune", label: "Prune orphaned key names" });
 
     const readline = await import("node:readline");
     const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
@@ -334,6 +345,8 @@ async function main(): Promise<void> {
         await handleDelete(ask, directory, entries);
     } else if (action === "rename") {
         await handleRename(ask, directory, entries);
+    } else if (action === "prune") {
+        await handlePrune();
     }
 
     rl.close();
