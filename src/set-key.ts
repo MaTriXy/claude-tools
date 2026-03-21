@@ -17,14 +17,15 @@ function getConfigFile(): string {
 const ENVRC_SNIPPET = `# managed by claude-tools
 _CC_KEY=$(security find-generic-password -s "Claude Code $(echo -n "$PWD" | base64)" -w 2>/dev/null)
 if [ -n "$_CC_KEY" ]; then
+  export ANTHROPIC_API_KEY="$_CC_KEY"
   _CC_RESP=$(curl -s https://api.anthropic.com/v1/messages/count_tokens \\
     -H "x-api-key: $_CC_KEY" -H "anthropic-version: 2023-06-01" \\
     -H "content-type: application/json" \\
     -d '{"model":"claude-haiku-4-5-20251001","messages":[{"role":"user","content":"a"}]}')
   case "$_CC_RESP" in
-    *'"input_tokens"'*) export ANTHROPIC_API_KEY="$_CC_KEY" ;;
-    *"usage limits"*)   echo "direnv: API key quota exhausted - claude will fall back to the managed key" >&2 ;;
-    *)                  echo "direnv: API key invalid - claude will fall back to the managed key" >&2 ;;
+    *'"input_tokens"'*) ;;
+    *"usage limits"*)   printf '\\033[33mdirenv: warning: API key quota exhausted\\033[0m\\n' >&2 ;;
+    *)                  printf '\\033[33mdirenv: warning: API key is invalid\\033[0m\\n' >&2 ;;
   esac
   unset _CC_RESP _CC_KEY
 fi`;
@@ -358,12 +359,13 @@ export function ensureEnvrc(directory: string): { created: boolean; appended: bo
     if (fs.existsSync(envrc)) {
         const content = fs.readFileSync(envrc, "utf-8");
 
-        if (content.includes("# managed by claude-tools")) {
+        // Current format: always exports key and uses printf for yellow warnings
+        if (content.includes("# managed by claude-tools") && content.includes("\\033[33m")) {
             return { created: false, appended: false, alreadyPresent: true, upgraded: false };
         }
 
-        // Old format detected - replace with current snippet
-        if (content.includes("Claude Code $ENCODED_DIR")) {
+        // Older managed format (conditional export, no yellow warnings) or oldest format
+        if (content.includes("# managed by claude-tools") || content.includes("Claude Code $ENCODED_DIR")) {
             removeEnvrcSnippet(directory);
             if (fs.existsSync(envrc)) {
                 fs.appendFileSync(envrc, "\n" + ENVRC_SNIPPET + "\n");

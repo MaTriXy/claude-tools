@@ -431,10 +431,22 @@ describe("ensureEnvrc", () => {
         expect(fs.readFileSync(envrcPath, "utf-8")).toContain("managed by claude-tools");
     });
 
-    it("reports alreadyPresent when new snippet is found", () => {
-        fs.writeFileSync(envrcPath, "# managed by claude-tools\nsome content\nfi\n");
+    it("reports alreadyPresent when current snippet is found", () => {
+        fs.writeFileSync(envrcPath, "# managed by claude-tools\nsome content\n\\033[33m\nfi\n");
         const result = ensureEnvrc(tmpDir);
         expect(result.alreadyPresent).toBe(true);
+    });
+
+    it("upgrades intermediate managed format (no yellow warnings) to current version", () => {
+        fs.writeFileSync(
+            envrcPath,
+            '# managed by claude-tools\n_CC_KEY=$(security)\nif [ -n "$_CC_KEY" ]; then\n  echo "direnv: API key invalid" >&2\nfi\n'
+        );
+        const result = ensureEnvrc(tmpDir);
+        expect(result.upgraded).toBe(true);
+        expect(result.alreadyPresent).toBe(false);
+        const content = fs.readFileSync(envrcPath, "utf-8");
+        expect(content).toContain("\\033[33m");
     });
 
     it("upgrades old snippet format to current version", () => {
