@@ -437,13 +437,28 @@ describe("ensureEnvrc", () => {
         expect(result.alreadyPresent).toBe(true);
     });
 
-    it("reports alreadyPresent for the old snippet format", () => {
-        fs.writeFileSync(
-            envrcPath,
-            'ENCODED_DIR=$(echo -n "$PWD" | base64)\nAPI_KEY=$(security find-generic-password -s "Claude Code $ENCODED_DIR" -w 2>/dev/null)\nif [ -n "$API_KEY" ]; then\n  export ANTHROPIC_API_KEY="$API_KEY"\nfi\n'
-        );
+    it("upgrades old snippet format to current version", () => {
+        const oldSnippet =
+            'ENCODED_DIR=$(echo -n "$PWD" | base64)\nAPI_KEY=$(security find-generic-password -s "Claude Code $ENCODED_DIR" -w 2>/dev/null)\nif [ -n "$API_KEY" ]; then\n  export ANTHROPIC_API_KEY="$API_KEY"\nfi\n';
+        fs.writeFileSync(envrcPath, oldSnippet);
         const result = ensureEnvrc(tmpDir);
-        expect(result.alreadyPresent).toBe(true);
+        expect(result.upgraded).toBe(true);
+        expect(result.alreadyPresent).toBe(false);
+        const content = fs.readFileSync(envrcPath, "utf-8");
+        expect(content).toContain("# managed by claude-tools");
+        expect(content).not.toContain("Claude Code $ENCODED_DIR");
+    });
+
+    it("upgrades old snippet when surrounded by other content", () => {
+        const oldSnippet =
+            'ENCODED_DIR=$(echo -n "$PWD" | base64)\nAPI_KEY=$(security find-generic-password -s "Claude Code $ENCODED_DIR" -w 2>/dev/null)\nif [ -n "$API_KEY" ]; then\n  export ANTHROPIC_API_KEY="$API_KEY"\nfi\n';
+        fs.writeFileSync(envrcPath, "export FOO=bar\n" + oldSnippet);
+        const result = ensureEnvrc(tmpDir);
+        expect(result.upgraded).toBe(true);
+        const content = fs.readFileSync(envrcPath, "utf-8");
+        expect(content).toContain("export FOO=bar");
+        expect(content).toContain("# managed by claude-tools");
+        expect(content).not.toContain("Claude Code $ENCODED_DIR");
     });
 
     it("appends to existing .envrc that lacks the snippet", () => {

@@ -352,20 +352,33 @@ export function validateKey(apiKey: string): Promise<KeyValidationResult> {
 }
 
 /** Ensure .envrc in a directory contains the keychain lookup snippet. */
-export function ensureEnvrc(directory: string): { created: boolean; appended: boolean; alreadyPresent: boolean } {
+export function ensureEnvrc(directory: string): { created: boolean; appended: boolean; alreadyPresent: boolean; upgraded: boolean } {
     const envrc = path.join(directory, ".envrc");
 
     if (fs.existsSync(envrc)) {
         const content = fs.readFileSync(envrc, "utf-8");
-        if (content.includes("# managed by claude-tools") || content.includes("Claude Code $ENCODED_DIR")) {
-            return { created: false, appended: false, alreadyPresent: true };
+
+        if (content.includes("# managed by claude-tools")) {
+            return { created: false, appended: false, alreadyPresent: true, upgraded: false };
         }
+
+        // Old format detected - replace with current snippet
+        if (content.includes("Claude Code $ENCODED_DIR")) {
+            removeEnvrcSnippet(directory);
+            if (fs.existsSync(envrc)) {
+                fs.appendFileSync(envrc, "\n" + ENVRC_SNIPPET + "\n");
+            } else {
+                fs.writeFileSync(envrc, ENVRC_SNIPPET + "\n");
+            }
+            return { created: false, appended: false, alreadyPresent: false, upgraded: true };
+        }
+
         fs.appendFileSync(envrc, "\n" + ENVRC_SNIPPET + "\n");
-        return { created: false, appended: true, alreadyPresent: false };
+        return { created: false, appended: true, alreadyPresent: false, upgraded: false };
     }
 
     fs.writeFileSync(envrc, ENVRC_SNIPPET + "\n");
-    return { created: true, appended: false, alreadyPresent: false };
+    return { created: true, appended: false, alreadyPresent: false, upgraded: false };
 }
 
 /**

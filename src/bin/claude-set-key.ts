@@ -131,6 +131,8 @@ async function handleSet(ask: AskFn, directory: string, entries: ReturnType<type
         const result = ensureEnvrc(directory);
         if (result.alreadyPresent) {
             console.log(".envrc already contains keychain lookup.");
+        } else if (result.upgraded) {
+            console.log("Upgraded .envrc keychain lookup to current version.");
         } else if (result.created) {
             console.log("Created .envrc with keychain lookup.");
         } else if (result.appended) {
